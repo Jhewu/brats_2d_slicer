@@ -1,5 +1,5 @@
 """
-This file is to check the raw values of the .nii.gz
+This file is used to check the raw values of the .nii.gz
 files in 2d slice using numpy. It can also be used
 to extract RGB images of the scan for visualization
 Needs to be in the same directory as the .nii files

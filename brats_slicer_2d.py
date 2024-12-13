@@ -11,9 +11,12 @@ with MIN_SLICE and MAX_SLICE (z-coordinates)
 in axial view of the brain
 
 By default it saves the 2d slices as .npy files 
-so that there's no need to normalize and making
-obtainig ground truth masks easier. You can modify that
+so that there's no need to normalize. You can modify that
 by changing the save_as_np to False in the function GetImageSlices()
+
+Only the training 2d slices are normalized, the ground_truth 
+is kept the default 0-3 range for easier mask extraction during training. 
+If you still want to normalize it, you can disable it by turning is_ground_true = False
 """
 
 """Imports"""
