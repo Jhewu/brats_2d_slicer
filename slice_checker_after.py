@@ -1,5 +1,9 @@
 """
-Needs to be in the same directory as the .nii files
+Checks and visualize the 2d slices after being run
+through brats_slicer_2d.py. Plots throught each slice
+sequentially. Needs to be in the same directory as 
+the 2d_slices in .npy array. If you want to check for 
+RGB just change the extension to .JPG
 """
 
 import cv2 as cv

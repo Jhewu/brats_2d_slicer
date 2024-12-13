@@ -34,7 +34,7 @@ def CreateDir(folder_name):
    if not os.path.exists(folder_name):
        os.makedirs(folder_name)   
 
-def GetImageSlices(scan, scan_dir_dest, save_as_np=True): 
+def GetImageSlices(scan, scan_dir_dest, save_as_np=True, is_ground_truth=False): 
     print(f"Slicing at...{scan}")
 
     # convert raw data
@@ -50,15 +50,19 @@ def GetImageSlices(scan, scan_dir_dest, save_as_np=True):
         slice_2d_min = np.min(slice_2d) 
         slice_2d_max = np.max(slice_2d)
         
-        if slice_2d_max > 0:
-            slice_2d = (slice_2d - slice_2d_min) / slice_2d_max 
-            # Normalize the slice
-        else: 
-            print(f"Warning: Maximum value in slice {slice} is zero. Normalization skipped.") 
-            slice_2d = slice_2d - slice_2d_min # At least shift the min to 0
-
-        #slice_2d = slice_2d - np.min(slice_2d)  
-        #slice_2d = slice_2d / np.max(slice_2d) 
+        if is_ground_truth == False:
+        # for ground truth, the default range is [0-3]. We
+        # will not normalize it because then we can easily 
+        # extract the ground truth mask, if you still want to 
+        # normalize it, you can disable it by turning is_ground_true = False
+            if slice_2d_max > 0:
+                # Normalize the slice
+                slice_2d = (slice_2d - slice_2d_min) / slice_2d_max 
+                    #slice_2d = slice_2d - np.min(slice_2d)  
+                    #slice_2d = slice_2d / np.max(slice_2d) 
+            else: 
+                print(f"Warning: Maximum value in slice {slice} is zero. Normalization skipped.") 
+                slice_2d = slice_2d - slice_2d_min # At least shift the min to 0
         
         # save the slice 2d into the respective directory
         slice_name = os.path.join(scan_dir_dest, f"slice{slice}")
@@ -108,9 +112,9 @@ def BraTS_Slicer_2D():
 
             # separate the ground truth
             if scan == ground_truth: 
-                GetImageSlices(scan_path, scan_dir_dest)
+                GetImageSlices(scan_path, scan_dir_dest, save_as_np=True, is_ground_truth=True)
             else: 
-                GetImageSlices(scan_path, scan_dir_dest)
+                GetImageSlices(scan_path, scan_dir_dest, save_as_np=True, is_ground_truth=False)
 
     # perform slicing on validation dataset
     for patient in patients_val_list: 
@@ -133,8 +137,7 @@ def BraTS_Slicer_2D():
             CreateDir(scan_dir_dest)
 
             # get 2d slices and save to scan_dir_dest
-            GetImageSlices(scan_path, scan_dir_dest)
-
+            GetImageSlices(scan_path, scan_dir_dest, save_as_np=True, is_ground_truth=False)
 
 if __name__ == "__main__": 
     print(f"Creating slices from {MIN_SLICE} to {MAX_SLICE} (representing the z-coordinates) in axial view...\n")
