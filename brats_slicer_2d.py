@@ -24,6 +24,7 @@ import os
 import nibabel as nib
 import cv2 as cv
 import numpy as np
+from concurrent.futures import ThreadPoolExecutor
 
 """HYPERPARAMETERS"""
 TRAINING_FOLDER = "training"
@@ -37,11 +38,11 @@ def CreateDir(folder_name):
    if not os.path.exists(folder_name):
        os.makedirs(folder_name)   
 
-def GetImageSlices(scan, scan_dir_dest, save_as_np=True, is_ground_truth=False): 
-    print(f"Slicing at...{scan}")
+def GetImageSlices(scan_name, scan_path, scan_dir_dest, save_as_np=True, is_ground_truth=False): 
+    print(f"Slicing at...{scan_path}")
 
     # convert raw data
-    scan = nib.load(scan)
+    scan = nib.load(scan_path)
     scan = scan.get_fdata()
     
     # save slices from MIN_SLICE and MAX_SLICE
@@ -68,11 +69,38 @@ def GetImageSlices(scan, scan_dir_dest, save_as_np=True, is_ground_truth=False):
                 slice_2d = slice_2d - slice_2d_min # At least shift the min to 0
         
         # save the slice 2d into the respective directory
-        slice_name = os.path.join(scan_dir_dest, f"slice{slice}")
+        slice_name = os.path.join(scan_dir_dest, f"{scan_name}{slice}")
         if save_as_np: 
             np.save(slice_name, slice_2d)
         else: 
             cv.imwrite(slice_name, slice_2d)
+
+def GetPatientScan(patient, patient_data_dest, patient_source_dir): 
+    # create the destination directory for each patient
+    patient_dir_dest = f"{patient_data_dest}/{patient}"
+        #CreateDir(patient_dir_dest)
+
+    # list of directories in each patient
+    patient_data_dir = os.path.join(patient_source_dir, patient)
+    patient_data_scan_list = os.listdir(patient_data_dir)
+
+    # slicing 2d images for each patient scan and saving it to train_data
+    for scan in patient_data_scan_list: 
+        ground_truth = f"{patient}-seg.nii.gz"
+
+        # create the path where the scan is located
+        scan_path = os.path.join(patient_data_dir, scan)
+
+        # create destination directory for each scan modality
+        scan_dir_name = scan.replace(".nii.gz", "")
+        scan_dir_dest = f"{patient_dir_dest}/{scan_dir_name}"
+        CreateDir(scan_dir_dest)
+
+        # separate the ground truth
+        if scan == ground_truth: 
+            GetImageSlices(scan_dir_name, scan_path, scan_dir_dest, save_as_np=True, is_ground_truth=True)
+        else: 
+            GetImageSlices(scan_dir_name, scan_path, scan_dir_dest, save_as_np=True, is_ground_truth=False)
 
 """Main Runtime"""
 def BraTS_Slicer_2D(): 
@@ -91,56 +119,16 @@ def BraTS_Slicer_2D():
         #CreateDir(train_data_dest)
         #CreateDir(val_data_dest)
 
-    # perform slicing on training dataset
-    for patient in patients_train_list: 
-        # create the destination directory for each patient
-        patient_dir_dest = f"{train_data_dest}/{patient}"
-            #CreateDir(patient_dir_dest)
+    # define a thread pool executor with a maximum numnber of workers
+    max_workers = 10 # adjust based on your syster's capabilities
 
-        # list of directories in each patient
-        patient_train_dir = os.path.join(training_dir, patient)
-        patient_train_scan_list = os.listdir(patient_train_dir)
-
-        # slicing 2d images for each patient scan and saving it to train_data
-        for scan in patient_train_scan_list: 
-            ground_truth = f"{patient}-seg.nii.gz"
-
-            # create the path where the scan is located
-            scan_path = os.path.join(patient_train_dir, scan)
-
-            # create destination directory for each scan modality
-            scan_dir_name = scan.replace(".nii.gz", "")
-            scan_dir_dest = f"{patient_dir_dest}/{scan_dir_name}"
-            CreateDir(scan_dir_dest)
-
-            # separate the ground truth
-            if scan == ground_truth: 
-                GetImageSlices(scan_path, scan_dir_dest, save_as_np=True, is_ground_truth=True)
-            else: 
-                GetImageSlices(scan_path, scan_dir_dest, save_as_np=True, is_ground_truth=False)
-
-    # perform slicing on validation dataset
-    for patient in patients_val_list: 
-        # create the destination directory for each patient
-        patient_dir_dest = f"{val_data_dest}/{patient}"
-            #CreateDir(patient_dir_dest)
-
-        # list of directories in each patient
-        patient_val_dir = os.path.join(validation_dir, patient)
-        patient_val_scan_list = os.listdir(patient_val_dir)
-
-        # slicing 2d images and saving from validation set
-        for scan in patient_val_scan_list: 
-            # create the path where the scan is located
-            scan_path = os.path.join(patient_val_dir, scan)
-
-            # create destination directory for each scan modality
-            scan_dir_name = scan.replace(".nii.gz", "")
-            scan_dir_dest = f"{patient_dir_dest}/{scan_dir_name}"
-            CreateDir(scan_dir_dest)
-
-            # get 2d slices and save to scan_dir_dest
-            GetImageSlices(scan_path, scan_dir_dest, save_as_np=True, is_ground_truth=False)
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        # perform slicing on training dataset
+        for patient in patients_train_list: 
+            executor.submit(GetPatientScan, patient, train_data_dest, training_dir)
+        # perform slicing on validation dataset
+        for patient in patients_val_list: 
+            executor.submit(GetPatientScan, patient, val_data_dest, validation_dir)
 
 if __name__ == "__main__": 
     print(f"Creating slices from {MIN_SLICE} to {MAX_SLICE} (representing the z-coordinates) in axial view...\n")

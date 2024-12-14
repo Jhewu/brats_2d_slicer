@@ -10,6 +10,7 @@ import cv2 as cv
 import numpy as np
 import matplotlib.pyplot as plt
 import time
+import os
 
 MIN_SLICE = 30
 MAX_SLICE = 120
@@ -23,10 +24,14 @@ fig, ax = plt.subplots()
 # create variable to hold the color var
 colorbar = None
 
+# get working directory
+cwd = os.getcwd()
+
 for slice in range(MIN_SLICE, MAX_SLICE): 
     print(f"\nThis is slice {slice}")
+    #print(f"{cwd}{slice}.npy")
 
-    image = np.load(f"slice{slice}.npy")
+    image = np.load(f"{os.path.basename(cwd)}{slice}.npy")
 
     print(image.shape)
     print(image.dtype)
