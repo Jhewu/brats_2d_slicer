@@ -14,6 +14,13 @@ Only the training 2d slices are normalized, the ground_truth
 is kept the default 0-3 range for easier mask extraction during training. 
 If you still want to normalize it, you can disable it by turning is_ground_true = False
 
+Brats_2d_slicer_YOLO on the otherhand is an alternative of brats_2d_slicer
+specifically made to prepare data for Yolov8-seg 
+training. It creates two directories, a train_data
+and a gt_data. It's recommended that you use a separate
+script to split the training data into test, val and train 
+for your actual training
+
 There are also two accompanying tools/mini scripts: 
 
 slice_checker_raw is used to check the raw values of the .nii.gz files in 2d slice
