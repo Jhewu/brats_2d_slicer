@@ -21,6 +21,11 @@ and a gt_data. It's recommended that you use a separate
 script to split the training data into test, val and train 
 for your actual training
 
+Since YOLOv8-seg training data and mask needs to contain
+the same name, in this script, it only picks one modality. 
+Although you could change it depending on which modality you want
+or run it multiple times and then stitch them together at the end. 
+
 There are also two accompanying tools/mini scripts: 
 
 slice_checker_raw is used to check the raw values of the .nii.gz files in 2d slice

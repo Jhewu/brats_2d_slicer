@@ -6,6 +6,11 @@ and a gt_data. It's recommended that you use a separate
 script to split the training data into test, val and train 
 for your actual training
 
+Since YOLOv8-seg training data and mask needs to contain
+the same name, in this script, it only picks one modality. 
+Although you could change it depending on which modality you want
+or run it multiple times and then stitch them together at the end. 
+
 You can modify where the slicing occurs
 with MIN_SLICE and MAX_SLICE (z-coordinates)
 in axial view of the brain
@@ -83,6 +88,7 @@ def GetPatientScan(patient, patient_data_dest, gt_data_dest, patient_source_dir)
     # slicing 2d images for each patient scan and saving it to train_data
     for scan in patient_data_scan_list: 
         ground_truth = f"{patient}-seg.nii.gz"
+        chosen_mod = f"{patient}-t1c.nii.gz"
 
         # create the path where the scan is located
         scan_path = os.path.join(patient_data_dir, scan)
@@ -96,8 +102,10 @@ def GetPatientScan(patient, patient_data_dest, gt_data_dest, patient_source_dir)
 
         # separate the ground truth
         if scan == ground_truth: 
+            scan_dir_name = scan_dir_name.replace("-seg", "")
             GetImageSlices(scan_dir_name, scan_path, gt_data_dest, save_as_np=True, is_ground_truth=True)
-        else: 
+        elif scan == chosen_mod:
+            scan_dir_name = scan_dir_name.replace("-t1c", "")
             GetImageSlices(scan_dir_name, scan_path, patient_data_dest, save_as_np=True, is_ground_truth=False)
 
 """Main Runtime"""
